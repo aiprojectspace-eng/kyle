@@ -74,8 +74,8 @@
 
     <div id="screen-intro" class="overlay">
         <img src="cat.png" class="cat-preview" onerror="this.src='https://cdn-icons-png.flaticon.com/512/616/616430.png'">
-        <h1>OYEN ADVENTURE</h1>
-        <p>Happy fishing time! Tap to jump.</p>
+        <h1>SAPIKRUDIN KYLE ADVENTURE</h1>
+        <p>Happy monyek time! Tap to jump.</p>
         <button onpointerdown="startCountdown()">LET'S GO!</button>
     </div>
 
@@ -229,7 +229,7 @@ function loop() {
             
             // Hitbox (inset for fairness)
             if(oyen.x < o.x+o.w-18 && oyen.x+oyen.w-18 > o.x && oyen.y < o.y+o.h-18 && oyen.y+oyen.h-18 > o.y) {
-                state = 'GAMEOVER';
+                state = 'KYLE PENGSAN';
                 document.getElementById('screen-gameover').style.display = 'flex';
                 document.getElementById('final-score').innerText = score;
                 if(score > highscore) {
@@ -284,3 +284,4 @@ loop();
 </script>
 </body>
 </html>
+
