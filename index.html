@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
-    <title>Oyen Adventure – Cheery Custom Assets</title>
+    <title>Oyen Adventure – Running Background</title>
     <style>
         :root { --primary: #00d2ff; --secondary: #92fe9d; --text: #05445e; }
         body { margin: 0; overflow: hidden; font-family: 'Segoe UI', sans-serif; background: #e0f7fa; touch-action: none; -webkit-user-select: none; }
@@ -25,7 +25,7 @@
 
     <div id="screen-intro" class="overlay">
         <h1>SAPIKRUDIN KYLE ADVENTURE</h1>
-        <p>Happy monyek time !!!</p>
+        <p>Happy monyek time! Tap to jump.</p>
         <button onpointerdown="startCountdown()">START</button>
     </div>
 
@@ -34,8 +34,8 @@
     </div>
 
     <div id="screen-gameover" class="overlay" style="display:none;">
-        <h1 style="color: #d32f2f;">AISEYMEN KYLEEE!</h1>
-        <button onpointerdown="startCountdown()">TRY MEMONYEK LAGI</button>
+        <h1 style="color: #d32f2f;">OYEN KENA!</h1>
+        <button onpointerdown="startCountdown()">RETRY</button>
     </div>
 
     <canvas id="game"></canvas>
@@ -60,6 +60,8 @@ let highscore = localStorage.getItem("oyen_highscore") || 0;
 document.getElementById("best").innerText = highscore;
 
 let W, H, groundY;
+let bgOffset = 0; // Untuk pergerakan background
+
 function resize() {
     W = window.innerWidth;
     H = window.innerHeight;
@@ -97,6 +99,7 @@ function startCountdown() {
             document.getElementById('screen-count').style.display = 'none';
             state = 'PLAYING';
             oyen.y = groundY - oyen.h;
+            oyen.vy = 0;
         }
     }, 1000);
 }
@@ -110,19 +113,50 @@ function jump() {
 }
 window.addEventListener('pointerdown', jump);
 
-function loop() {
-    // Cheery Background
+function drawMovingBG() {
+    // 1. SKY (Static)
     const grad = ctx.createLinearGradient(0, 0, 0, groundY);
-    grad.addColorStop(0, '#81d4fa'); // Sky blue
-    grad.addColorStop(1, '#e1f5fe'); // Pale blue
+    grad.addColorStop(0, '#81d4fa');
+    grad.addColorStop(1, '#e1f5fe');
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, W, H);
 
-    // Cheery Ground (Grass/Sand)
-    ctx.fillStyle = "#81c784"; // Light green grass
+    // 2. CLOUDS (Moving Slowly)
+    if (state === 'PLAYING') bgOffset += 2; 
+    ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
+    for (let i = 0; i < 5; i++) {
+        let x = ((i * W / 3) - (bgOffset * 0.5)) % (W + 200);
+        if (x < -200) x += (W + 400); 
+        ctx.beginPath();
+        ctx.arc(x, 100 + (i * 20), 40, 0, Math.PI * 2);
+        ctx.arc(x + 40, 100 + (i * 20), 50, 0, Math.PI * 2);
+        ctx.arc(x + 80, 100 + (i * 20), 40, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    // 3. GROUND
+    ctx.fillStyle = "#81c784";
     ctx.fillRect(0, groundY, W, H - groundY);
+    
+    // 4. MOVING GRASS DETAIL (Moving Fast)
+    ctx.strokeStyle = "#66bb6a";
+    ctx.lineWidth = 4;
+    for (let i = 0; i < 15; i++) {
+        let gx = ((i * W / 10) - (bgOffset * 4)) % (W + 100);
+        if (gx < -100) gx += (W + 200);
+        ctx.beginPath();
+        ctx.moveTo(gx, groundY);
+        ctx.lineTo(gx - 10, groundY + 20);
+        ctx.stroke();
+    }
+    
+    // Ground Highlight
     ctx.fillStyle = "#66bb6a";
-    ctx.fillRect(0, groundY, W, 10);
+    ctx.fillRect(0, groundY, W, 8);
+}
+
+function loop() {
+    drawMovingBG();
 
     if (state === 'PLAYING') {
         oyen.vy += oyen.gravity;
@@ -138,12 +172,11 @@ function loop() {
             else fishes.push({x: W, y: groundY-150-Math.random()*100, w: 50, h: 50});
         }
 
-        // Obstacles (Right to Left)
         obstacles.forEach((o, i) => {
             o.x -= (7 + score/15);
             ctx.drawImage(assets.obs, o.x, o.y, o.w, o.h);
             if(oyen.x < o.x+o.w-20 && oyen.x+oyen.w-20 > o.x && oyen.y < o.y+o.h-20 && oyen.y+oyen.h-20 > o.y) {
-                state = 'GAMEOVER';
+                state = 'AISEYMEN KYLEEE;
                 document.getElementById('screen-gameover').style.display = 'flex';
                 if(score > highscore) {
                     highscore = score;
@@ -154,7 +187,6 @@ function loop() {
             if(o.x < -100) obstacles.splice(i, 1);
         });
 
-        // Fish (Right to Left)
         fishes.forEach((f, i) => {
             f.x -= 6;
             ctx.drawImage(assets.fish, f.x, f.y, f.w, f.h);
@@ -166,15 +198,12 @@ function loop() {
         });
     }
 
-    // Draw Oyen (MIRROR ONLY - Look Right)
+    // Draw Oyen (Mirrored)
     ctx.save();
     oyen.stretchX += (1 - oyen.stretchX) * 0.12;
     oyen.stretchY += (1 - oyen.stretchY) * 0.12;
     ctx.translate(oyen.x + oyen.w/2, oyen.y + oyen.h/2);
-    
-    // Mirror horizontal: -1 faces right (assuming original image faces left)
     ctx.scale(-1 * oyen.stretchX, oyen.stretchY);
-    
     ctx.drawImage(assets.cat, -oyen.w/2, -oyen.h/2, oyen.w, oyen.h);
     ctx.restore();
 
@@ -184,4 +213,3 @@ loop();
 </script>
 </body>
 </html>
-
