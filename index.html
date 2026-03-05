@@ -34,8 +34,8 @@
     </div>
 
     <div id="screen-gameover" class="overlay" style="display:none;">
-        <h1 style="color: #d32f2f;">OYEN KENA!</h1>
-        <button onpointerdown="startCountdown()">RETRY</button>
+        <h1 style="color: #d32f2f;">AISEYMEN KYLE!</h1>
+        <button onpointerdown="startCountdown()">CUBA MONYEK LAGI</button>
     </div>
 
     <canvas id="game"></canvas>
@@ -176,7 +176,7 @@ function loop() {
             o.x -= (7 + score/15);
             ctx.drawImage(assets.obs, o.x, o.y, o.w, o.h);
             if(oyen.x < o.x+o.w-20 && oyen.x+oyen.w-20 > o.x && oyen.y < o.y+o.h-20 && oyen.y+oyen.h-20 > o.y) {
-                state = 'AISEYMEN KYLEEE;
+                state = 'KYLE LOSER;
                 document.getElementById('screen-gameover').style.display = 'flex';
                 if(score > highscore) {
                     highscore = score;
@@ -213,3 +213,4 @@ loop();
 </script>
 </body>
 </html>
+
