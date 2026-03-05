@@ -3,30 +3,80 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
-    <title>Oyen Adventure – Mirrored Cat Only</title>
+    <title>Oyen Adventure – Cheery PNG Edition</title>
     <style>
-        :root { --primary: #ff9800; --secondary: #ff5722; }
-        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', sans-serif; background: #000; touch-action: none; -webkit-user-select: none; }
+        :root { --primary: #4fc3f7; --secondary: #fff176; --text: #01579b; }
+        
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            font-family: 'Segoe UI', Roboto, sans-serif; 
+            background: #b3e5fc; /* Happy light blue fallback */
+            touch-action: none; 
+            -webkit-user-select: none;
+        }
+
         canvas { display: block; }
-        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; backdrop-filter: blur(15px); background: rgba(0,0,0,0.75); z-index: 100; text-align: center; padding: 20px; box-sizing: border-box; }
-        #ui-layer { position: absolute; top: 20px; left: 20px; right: 20px; display: flex; justify-content: space-between; color: white; font-weight: bold; font-size: 22px; z-index: 50; pointer-events: none; }
-        .glass { background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(8px); padding: 12px 24px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); }
-        h1 { font-size: 3.5rem; margin: 0; text-shadow: 0 0 20px var(--primary); font-weight: 900; }
-        button { padding: 20px 60px; font-size: 1.8rem; font-weight: bold; border: none; border-radius: 60px; cursor: pointer; background: linear-gradient(45deg, var(--primary), var(--secondary)); color: white; box-shadow: 0 0 30px rgba(255, 152, 0, 0.5); touch-action: manipulation; }
-        #countdown { font-size: 10rem; font-weight: 900; color: white; }
+
+        /* Full-screen Overlays */
+        .overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            color: var(--text); backdrop-filter: blur(5px); background: rgba(255,255,255,0.7);
+            z-index: 100; text-align: center; padding: 20px; box-sizing: border-box;
+        }
+
+        /* Top HUD */
+        #ui-layer {
+            position: absolute; top: env(safe-area-inset-top, 20px); left: 20px; right: 20px;
+            display: flex; justify-content: space-between;
+            color: var(--text); font-weight: bold; font-size: 24px; z-index: 50; pointer-events: none;
+        }
+
+        .glass {
+            background: rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(4px);
+            padding: 12px 24px; border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.2);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+        }
+
+        h1 { font-size: 3.5rem; margin: 0; color: #0277bd; text-shadow: 2px 2px 0 #fff; font-weight: 900; }
+        p { font-size: 1.3rem; margin: 15px 0 30px 0; font-weight: bold; }
+        
+        /* Mobile-Fix Button */
+        button {
+            padding: 20px 60px; font-size: 1.8rem; font-weight: bold;
+            border: none; border-radius: 60px; cursor: pointer;
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            color: var(--text); box-shadow: 0 4px 15px rgba(2, 119, 189, 0.3);
+            transition: transform 0.1s;
+            touch-action: manipulation;
+            z-index: 110;
+        }
+        button:active { transform: scale(0.95); }
+
+        .cat-preview {
+            width: 120px; height: 120px; object-fit: contain;
+            margin-bottom: 20px; animation: float 2.5s ease-in-out infinite;
+        }
+
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-25px); } }
+        #countdown { font-size: 12rem; font-weight: 900; color: #0277bd; text-shadow: 4px 4px 0 #fff; }
     </style>
 </head>
 <body>
 
     <div id="ui-layer">
-        <div class="glass">🐟 <span id="score">0</span></div>
+        <div class="glass">🐠 <span id="score">0</span></div>
         <div class="glass">🏆 <span id="best">0</span></div>
     </div>
 
     <div id="screen-intro" class="overlay">
-        <h1>OYEN RUN</h1>
-        <p>Catch fish. Avoid obstacles!</p>
-        <button onpointerdown="startCountdown()">START</button>
+        <img src="cat.png" class="cat-preview" onerror="this.src='https://cdn-icons-png.flaticon.com/512/616/616430.png'">
+        <h1>OYEN ADVENTURE</h1>
+        <p>Happy fishing time! Tap to jump.</p>
+        <button onpointerdown="startCountdown()">LET'S GO!</button>
     </div>
 
     <div id="screen-count" class="overlay" style="display:none;">
@@ -34,9 +84,9 @@
     </div>
 
     <div id="screen-gameover" class="overlay" style="display:none;">
-        <h1 style="color: #ff4444;">OYEN KENA!</h1>
-        <p>Score: <span id="final-score">0</span></p>
-        <button onpointerdown="startCountdown()">RETRY</button>
+        <h1>BOO-HOO!</h1>
+        <p>You caught <span id="final-score">0</span> fish!</p>
+        <button onpointerdown="startCountdown()">TRY AGAIN?</button>
     </div>
 
     <canvas id="game"></canvas>
@@ -45,16 +95,15 @@
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
-// Image Assets
+// Assets
 const catImg = new Image();
 catImg.src = 'cat.png'; 
 let catLoaded = false;
 catImg.onload = () => { catLoaded = true; };
 
-const obsImg = new Image();
-obsImg.src = 'obstacle.png'; 
-let obsLoaded = false;
-obsImg.onload = () => { obsLoaded = true; };
+// Fish Icon Asset (Happy blue/orange fish)
+const fishIcon = new Image();
+fishIcon.src = 'https://img.freepik.com/premium-vector/bright-colorful-fish-game-icons-vector-design_961038-60993.jpg';
 
 let state = 'INTRO';
 let score = 0;
@@ -67,41 +116,52 @@ function resize() {
     H = window.innerHeight;
     canvas.width = W;
     canvas.height = H;
-    groundY = H * 0.8;
+    groundY = H * 0.82; // Adjust ground position slightly for new theme
 }
 window.addEventListener('resize', resize);
+resize();
 
+// Character Object
 const oyen = {
-    x: 60, // BACK TO LEFT SIDE
-    y: 0, w: 90, h: 90,
+    x: 60, y: 0, w: 90, h: 90,
     vy: 0, gravity: 0.8, jumpPower: -18,
     onGround: false, stretchX: 1, stretchY: 1
 };
 
-resize();
-
 let obstacles = [], fishes = [], spawnTimer = 0;
+
+/* ================= GAME CONTROL ================= */
 
 function startCountdown() {
     if (state === 'COUNTDOWN') return;
+    
+    // UI Transitions
     document.getElementById('screen-intro').style.display = 'none';
     document.getElementById('screen-gameover').style.display = 'none';
     document.getElementById('screen-count').style.display = 'flex';
+    
     state = 'COUNTDOWN';
     let count = 5;
     const el = document.getElementById('countdown');
     el.innerText = count;
-    score = 0; obstacles = []; fishes = [];
+    
+    // Reset Data
+    score = 0;
+    obstacles = [];
+    fishes = [];
     document.getElementById('score').innerText = "0";
 
     const timer = setInterval(() => {
         count--;
-        if (count > 0) el.innerText = count;
-        else {
+        if (count > 0) {
+            el.innerText = count;
+            if(window.navigator.vibrate) window.navigator.vibrate(30); // Lighter vibration for cheery theme
+        } else {
             clearInterval(timer);
             document.getElementById('screen-count').style.display = 'none';
             state = 'PLAYING';
             oyen.y = groundY - oyen.h;
+            oyen.vy = 0;
         }
     }, 1000);
 }
@@ -112,50 +172,63 @@ function jump(e) {
         oyen.vy = oyen.jumpPower;
         oyen.onGround = false;
         oyen.stretchX = 0.7; oyen.stretchY = 1.3;
+        if(window.navigator.vibrate) window.navigator.vibrate(10);
     }
 }
 
+// Mobile & Desktop Listeners
 window.addEventListener('touchstart', (e) => { if(state==='PLAYING') jump(e); }, {passive: false});
 window.addEventListener('mousedown', (e) => { if(state==='PLAYING') jump(e); });
 
+/* ================= GAME LOOP ================= */
+
 function loop() {
-    // Sky
+    // Cheery Sunny Background Gradient (Inspired by image_0.png)
     const skyGrad = ctx.createLinearGradient(0, 0, 0, groundY);
-    skyGrad.addColorStop(0, '#1a2a6c'); skyGrad.addColorStop(1, '#b21f1f');
+    skyGrad.addColorStop(0, '#4fc3f7'); // Cheery light blue sky
+    skyGrad.addColorStop(1, '#e1f5fe'); // Lighter blue near horizon
     ctx.fillStyle = skyGrad;
     ctx.fillRect(0, 0, W, H);
 
-    // Ground
-    ctx.fillStyle = "#111";
+    // Ground - Cheery sandy beach/reef path
+    ctx.fillStyle = "#ffe082"; // Happy sand color
     ctx.fillRect(0, groundY, W, H - groundY);
+    ctx.fillStyle = "#ffd54f"; // Lighter sand highlight
+    ctx.fillRect(0, groundY, W, 8); // Ground highlight line
 
     if (state === 'PLAYING') {
+        // Physics
         oyen.vy += oyen.gravity;
         oyen.y += oyen.vy;
+        
         if (oyen.y > groundY - oyen.h) {
             if(!oyen.onGround) { oyen.stretchX = 1.3; oyen.stretchY = 0.7; }
-            oyen.y = groundY - oyen.h; oyen.vy = 0; oyen.onGround = true;
+            oyen.y = groundY - oyen.h;
+            oyen.vy = 0;
+            oyen.onGround = true;
         }
 
+        // Spawning Logic
         spawnTimer++;
-        if (spawnTimer % 90 === 0) {
-            // SPAWN FROM RIGHT
-            if(Math.random() > 0.4) obstacles.push({x: W, y: groundY-70, w: 70, h: 70});
-            else fishes.push({x: W, y: groundY-150-Math.random()*80, r: 18});
+        if (spawnTimer % 95 === 0) { // Slower spawning for a chill vibe
+            if(Math.random() > 0.4) {
+                // Obstacles can be something else, like coral or beach balls? (Keeping crates for now)
+                obstacles.push({x: W, y: groundY-60, w: 60, h: 60});
+            } else {
+                fishes.push({x: W, y: groundY-160-Math.random()*100, w: 45, h: 45}); // Define fish size
+            }
         }
 
-        // Move obstacles RIGHT to LEFT
+        // Obstacles
+        ctx.fillStyle = "#8d6e63"; // Brighter brown/crate color
         obstacles.forEach((o, i) => {
-            o.x -= (7 + score/12);
+            o.x -= (6.5 + score/15); // Slightly slower base speed
+            ctx.shadowBlur = 10; ctx.shadowColor = "rgba(0,0,0,0.2)";
+            ctx.fillRect(o.x, o.y, o.w, o.h);
+            ctx.shadowBlur = 0;
             
-            if (obsLoaded) {
-                ctx.drawImage(obsImg, o.x, o.y, o.w, o.h);
-            } else {
-                ctx.fillStyle = "#5d4037";
-                ctx.fillRect(o.x, o.y, o.w, o.h);
-            }
-            
-            if(oyen.x < o.x+o.w-20 && oyen.x+oyen.w-20 > o.x && oyen.y < o.y+o.h-20 && oyen.y+oyen.h-20 > o.y) {
+            // Hitbox (inset for fairness)
+            if(oyen.x < o.x+o.w-18 && oyen.x+oyen.w-18 > o.x && oyen.y < o.y+o.h-18 && oyen.y+oyen.h-18 > o.y) {
                 state = 'GAMEOVER';
                 document.getElementById('screen-gameover').style.display = 'flex';
                 document.getElementById('final-score').innerText = score;
@@ -164,16 +237,20 @@ function loop() {
                     localStorage.setItem("oyen_highscore", highscore);
                     document.getElementById("best").innerText = highscore;
                 }
+                if(window.navigator.vibrate) window.navigator.vibrate([80, 40, 80]); // Lighter crash vibration
             }
             if(o.x < -100) obstacles.splice(i, 1);
         });
 
-        // Fish
+        // Fish (Now drawing actual fish icons, inspired by image_2.png)
         fishes.forEach((f, i) => {
-            f.x -= 6;
-            ctx.fillStyle = "gold";
-            ctx.beginPath(); ctx.arc(f.x, f.y, f.r, 0, Math.PI*2); ctx.fill();
-            if(Math.hypot((oyen.x+oyen.w/2)-f.x, (oyen.y+oyen.h/2)-f.y) < 55) {
+            f.x -= 5.5; // Slightly slower fish
+            
+            ctx.shadowBlur = 15; ctx.shadowColor = "rgba(255, 255, 255, 0.7)";
+            ctx.drawImage(fishIcon, f.x, f.y, f.w, f.h);
+            ctx.shadowBlur = 0;
+
+            if(Math.hypot((oyen.x+oyen.w/2)-(f.x+f.w/2), (oyen.y+oyen.h/2)-(f.y+f.h/2)) < 60) {
                 score++;
                 document.getElementById('score').innerText = score;
                 fishes.splice(i, 1);
@@ -181,26 +258,28 @@ function loop() {
         });
     }
 
-    // Draw Oyen (Mirrored to face RIGHT)
+    // Draw Oyen with Squash & Stretch
     ctx.save();
     oyen.stretchX += (1 - oyen.stretchX) * 0.12;
     oyen.stretchY += (1 - oyen.stretchY) * 0.12;
     ctx.translate(oyen.x + oyen.w/2, oyen.y + oyen.h/2);
+    ctx.scale(oyen.stretchX, oyen.stretchY);
     
-    // SCALE -1 on X mirrors the image. 
-    // Since original images usually face left, -1 makes it face right.
-    ctx.scale(oyen.stretchX * -1, oyen.stretchY); 
+    // Shadow
+    ctx.fillStyle = "rgba(0,0,0,0.15)";
+    ctx.beginPath(); ctx.ellipse(0, oyen.h/2, 35 * oyen.stretchX, 8, 0, 0, Math.PI*2); ctx.fill();
 
     if (catLoaded) {
         ctx.drawImage(catImg, -oyen.w/2, -oyen.h/2, oyen.w, oyen.h);
     } else {
-        ctx.fillStyle = "orange";
+        ctx.fillStyle = "#ffb74d"; // Cheery orange fallback
         ctx.beginPath(); ctx.roundRect(-oyen.w/2, -oyen.h/2, oyen.w, oyen.h, 15); ctx.fill();
     }
     ctx.restore();
 
     requestAnimationFrame(loop);
 }
+
 loop();
 </script>
 </body>
