@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
-    <title>Oyen Adventure – Image Edition</title>
+    <title>Oyen Adventure – Mirrored Cat Only</title>
     <style>
         :root { --primary: #ff9800; --secondary: #ff5722; }
         body { margin: 0; overflow: hidden; font-family: 'Segoe UI', sans-serif; background: #000; touch-action: none; -webkit-user-select: none; }
@@ -52,7 +52,7 @@ let catLoaded = false;
 catImg.onload = () => { catLoaded = true; };
 
 const obsImg = new Image();
-obsImg.src = 'obstacle.png'; // Added your new image here
+obsImg.src = 'obstacle.png'; 
 let obsLoaded = false;
 obsImg.onload = () => { obsLoaded = true; };
 
@@ -68,12 +68,12 @@ function resize() {
     canvas.width = W;
     canvas.height = H;
     groundY = H * 0.8;
-    oyen.x = W - 150; // Cat stays on the right
 }
 window.addEventListener('resize', resize);
 
 const oyen = {
-    x: 0, y: 0, w: 90, h: 90,
+    x: 60, // BACK TO LEFT SIDE
+    y: 0, w: 90, h: 90,
     vy: 0, gravity: 0.8, jumpPower: -18,
     onGround: false, stretchX: 1, stretchY: 1
 };
@@ -139,13 +139,14 @@ function loop() {
 
         spawnTimer++;
         if (spawnTimer % 90 === 0) {
-            if(Math.random() > 0.4) obstacles.push({x: -100, y: groundY-70, w: 70, h: 70});
-            else fishes.push({x: -100, y: groundY-150-Math.random()*80, r: 18});
+            // SPAWN FROM RIGHT
+            if(Math.random() > 0.4) obstacles.push({x: W, y: groundY-70, w: 70, h: 70});
+            else fishes.push({x: W, y: groundY-150-Math.random()*80, r: 18});
         }
 
-        // Move obstacles LEFT to RIGHT
+        // Move obstacles RIGHT to LEFT
         obstacles.forEach((o, i) => {
-            o.x += (7 + score/12);
+            o.x -= (7 + score/12);
             
             if (obsLoaded) {
                 ctx.drawImage(obsImg, o.x, o.y, o.w, o.h);
@@ -154,7 +155,6 @@ function loop() {
                 ctx.fillRect(o.x, o.y, o.w, o.h);
             }
             
-            // Collision Detection
             if(oyen.x < o.x+o.w-20 && oyen.x+oyen.w-20 > o.x && oyen.y < o.y+o.h-20 && oyen.y+oyen.h-20 > o.y) {
                 state = 'GAMEOVER';
                 document.getElementById('screen-gameover').style.display = 'flex';
@@ -165,12 +165,12 @@ function loop() {
                     document.getElementById("best").innerText = highscore;
                 }
             }
-            if(o.x > W + 100) obstacles.splice(i, 1);
+            if(o.x < -100) obstacles.splice(i, 1);
         });
 
         // Fish
         fishes.forEach((f, i) => {
-            f.x += 6;
+            f.x -= 6;
             ctx.fillStyle = "gold";
             ctx.beginPath(); ctx.arc(f.x, f.y, f.r, 0, Math.PI*2); ctx.fill();
             if(Math.hypot((oyen.x+oyen.w/2)-f.x, (oyen.y+oyen.h/2)-f.y) < 55) {
@@ -181,13 +181,14 @@ function loop() {
         });
     }
 
-    // Draw Oyen (Mirrored)
+    // Draw Oyen (Mirrored to face RIGHT)
     ctx.save();
     oyen.stretchX += (1 - oyen.stretchX) * 0.12;
     oyen.stretchY += (1 - oyen.stretchY) * 0.12;
     ctx.translate(oyen.x + oyen.w/2, oyen.y + oyen.h/2);
     
-    // This flips the cat horizontally
+    // SCALE -1 on X mirrors the image. 
+    // Since original images usually face left, -1 makes it face right.
     ctx.scale(oyen.stretchX * -1, oyen.stretchY); 
 
     if (catLoaded) {
