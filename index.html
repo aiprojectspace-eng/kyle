@@ -1,378 +1,246 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Kyle – Ultra Graphics</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+    <title>Oyen Adventure – PNG Edition</title>
+    <style>
+        :root { --primary: #ff9800; --secondary: #ff5722; }
+        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Arial, sans-serif; background: #000; touch-action: none; -webkit-user-select: none; }
+        canvas { display: block; }
 
-<style>
-body{
-margin:0;
-overflow:hidden;
-font-family:Arial;
-touch-action:none;
-background:black;
-}
+        .overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            color: white; backdrop-filter: blur(15px); background: rgba(0,0,0,0.7);
+            z-index: 10; text-align: center; padding: 20px; box-sizing: border-box;
+        }
 
-canvas{display:block;}
+        #ui-layer {
+            position: absolute; top: 20px; left: 20px; right: 20px;
+            display: flex; justify-content: space-between;
+            color: white; font-weight: bold; font-size: 20px; z-index: 5; pointer-events: none;
+        }
 
-#ui{
-position:absolute;
-top:20px;
-left:20px;
-padding:15px 25px;
-border-radius:25px;
-background:rgba(255,255,255,0.25);
-backdrop-filter:blur(15px);
-color:white;
-font-size:22px;
-font-weight:bold;
-box-shadow:0 0 20px rgba(255,255,255,0.3);
-}
+        .glass {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            padding: 10px 20px; border-radius: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
 
-#gameOver{
-position:absolute;
-top:0;
-left:0;
-width:100%;
-height:100%;
-background:rgba(0,0,0,0.7);
-display:none;
-justify-content:center;
-align-items:center;
-flex-direction:column;
-color:white;
-backdrop-filter:blur(10px);
-}
+        h1 { font-size: 3rem; margin: 10px 0; text-shadow: 0 0 20px var(--primary); }
+        button {
+            padding: 15px 40px; font-size: 1.5rem; font-weight: bold;
+            border: none; border-radius: 50px; cursor: pointer;
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            color: white; box-shadow: 0 0 20px var(--primary);
+        }
 
-button{
-padding:18px 40px;
-border:none;
-border-radius:40px;
-background:linear-gradient(45deg,#ff9800,#ff5722);
-color:white;
-font-size:20px;
-margin-top:20px;
-box-shadow:0 0 20px orange;
-}
-</style>
+        /* The Intro Cat Icon */
+        .cat-preview-img {
+            width: 120px; height: 120px; object-fit: contain;
+            margin-bottom: 20px; animation: float 2s ease-in-out infinite;
+            filter: drop-shadow(0 0 15px var(--primary));
+        }
+
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
+        #countdown { font-size: 8rem; font-weight: 900; }
+    </style>
 </head>
 <body>
 
-<div id="ui">
-🐟 Score: <span id="score">0</span>
-</div>
+    <div id="ui-layer">
+        <div class="glass">🐟 <span id="score">0</span></div>
+        <div class="glass">🏆 <span id="best">0</span></div>
+    </div>
 
-<div id="gameOver">
-<h1>💀 Oyen Kena!</h1>
-<p>Score: <span id="finalScore"></span></p>
-<button onclick="location.reload()">Play Again</button>
-</div>
+    <div id="screen-intro" class="overlay">
+        <img src="cat.png" class="cat-preview-img" alt="Oyen">
+        <h1>OYEN RUN</h1>
+        <p>Tap to jump. Catch golden fish!</p>
+        <button onclick="startCountdown()">PLAY GAME</button>
+    </div>
 
-<canvas id="game"></canvas>
+    <div id="screen-count" class="overlay" style="display:none;">
+        <div id="countdown">5</div>
+    </div>
+
+    <div id="screen-gameover" class="overlay" style="display:none;">
+        <h1>OYEN KENA!</h1>
+        <p>Final Score: <span id="final-score">0</span></p>
+        <button onclick="startCountdown()">RETRY</button>
+    </div>
+
+    <canvas id="game"></canvas>
 
 <script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
 
-const canvas=document.getElementById("game");
-const ctx=canvas.getContext("2d");
+// Load PNG
+const catImg = new Image();
+catImg.src = 'cat.png';
 
-const scoreEl=document.getElementById("score");
-const gameOverUI=document.getElementById("gameOver");
-const finalScore=document.getElementById("finalScore");
+let state = 'INTRO';
+let score = 0;
+let highscore = localStorage.getItem("oyen_highscore") || 0;
+document.getElementById("best").innerText = highscore;
 
-canvas.width=window.innerWidth;
-canvas.height=window.innerHeight;
-
-let score=0;
-let running=true;
-
-/* ================= GRAPHIC ELEMENTS ================= */
-
-let clouds=[];
-let stars=[];
-let mountains=[];
-let grass=[];
-
-/* Create elements */
-for(let i=0;i<80;i++){
-stars.push({
-x:Math.random()*canvas.width,
-y:Math.random()*canvas.height/2,
-r:Math.random()*2
-});
+let W, H, groundY;
+function resize() {
+    W = window.innerWidth;
+    H = window.innerHeight;
+    canvas.width = W;
+    canvas.height = H;
+    groundY = H * 0.8;
 }
+window.addEventListener('resize', resize);
+resize();
 
-for(let i=0;i<5;i++){
-clouds.push({
-x:Math.random()*canvas.width,
-y:Math.random()*200,
-size:50+Math.random()*80,
-speed:0.5+Math.random()
-});
-}
-
-for(let i=0;i<3;i++){
-mountains.push({
-x:i*canvas.width/2,
-height:150+Math.random()*150,
-speed:0.5+i*0.3,
-color:["#2C3E50","#34495E","#1F2D3D"][i]
-});
-}
-
-for(let i=0;i<100;i++){
-grass.push({
-x:i*20,
-wave:Math.random()*Math.PI*2,
-height:20+Math.random()*40
-});
-}
-
-/* ================= CAT ================= */
-
-let cat={
-x:80,
-y:canvas.height-200,
-w:110,
-h:110,
-vy:0,
-gravity:0.8,
-jump:-18,
-onGround:true
+const oyen = {
+    x: 60, y: 0, w: 90, h: 90, // Adjusted size for PNG
+    vy: 0, gravity: 0.7, jumpPower: -18,
+    onGround: false,
+    stretchX: 1, stretchY: 1
 };
 
-canvas.addEventListener("click",jump);
+let particles = [], obstacles = [], fishes = [], spawnTimer = 0;
 
-function jump(){
-if(cat.onGround){
-cat.vy=cat.jump;
-cat.onGround=false;
+function handleJump() {
+    if (state === 'PLAYING' && oyen.onGround) {
+        oyen.vy = oyen.jumpPower;
+        oyen.onGround = false;
+        oyen.stretchX = 0.7; oyen.stretchY = 1.3;
+    }
 }
-}
+window.addEventListener('touchstart', (e) => { handleJump(); e.preventDefault(); }, {passive: false});
+window.addEventListener('mousedown', handleJump);
 
-/* ================= SPAWN ================= */
-
-let fish=[];
-let obstacles=[];
-
-setInterval(()=>{
-if(!running) return;
-
-fish.push({
-x:canvas.width,
-y:canvas.height-160,
-r:18,
-speed:6,
-offset:0
-});
-
-if(Math.random()<0.6){
-obstacles.push({
-x:canvas.width,
-y:canvas.height-160,
-w:55,
-h:55,
-speed:6
-});
+function startCountdown() {
+    state = 'COUNTDOWN';
+    document.querySelectorAll('.overlay').forEach(el => el.style.display = 'none');
+    document.getElementById('screen-count').style.display = 'flex';
+    
+    let count = 5;
+    const el = document.getElementById('countdown');
+    el.innerText = count;
+    
+    const timer = setInterval(() => {
+        count--;
+        el.innerText = count;
+        if(window.navigator.vibrate) window.navigator.vibrate(40);
+        if (count <= 0) { clearInterval(timer); initGame(); }
+    }, 1000);
 }
 
-},900);
-
-/* ================= DRAW BACKGROUND ================= */
-
-function drawBackground(){
-
-/* Sky Gradient */
-let sky=ctx.createLinearGradient(0,0,0,canvas.height);
-sky.addColorStop(0,"#0f2027");
-sky.addColorStop(0.5,"#203a43");
-sky.addColorStop(1,"#2c5364");
-ctx.fillStyle=sky;
-ctx.fillRect(0,0,canvas.width,canvas.height);
-
-/* Stars */
-ctx.fillStyle="white";
-stars.forEach(s=>{
-ctx.beginPath();
-ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
-ctx.fill();
-});
-
-/* Clouds (soft + glow) */
-clouds.forEach(c=>{
-c.x-=c.speed;
-ctx.fillStyle="rgba(255,255,255,0.8)";
-ctx.shadowColor="white";
-ctx.shadowBlur=20;
-ctx.beginPath();
-ctx.arc(c.x,c.y,c.size,0,Math.PI*2);
-ctx.fill();
-ctx.shadowBlur=0;
-if(c.x<-200) c.x=canvas.width+200;
-});
-
-/* Mountains (Parallax) */
-mountains.forEach(m=>{
-m.x-=m.speed;
-ctx.fillStyle=m.color;
-ctx.beginPath();
-ctx.moveTo(m.x,canvas.height-80);
-ctx.lineTo(m.x+canvas.width/2,canvas.height-80);
-ctx.lineTo(m.x+canvas.width/4,canvas.height-m.height);
-ctx.closePath();
-ctx.fill();
-
-if(m.x<-canvas.width) m.x=canvas.width;
-});
-
-/* Ground */
-ctx.fillStyle="#2E8B57";
-ctx.fillRect(0,canvas.height-80,canvas.width,80);
-
-/* Grass Wind Effect */
-grass.forEach(g=>{
-g.wave+=0.08;
-let sway=Math.sin(g.wave)*8;
-
-ctx.strokeStyle="#3CB371";
-ctx.lineWidth=4;
-ctx.beginPath();
-ctx.moveTo(g.x,canvas.height-80);
-ctx.quadraticCurveTo(
-g.x+sway,
-canvas.height-100-g.height,
-g.x,
-canvas.height-80-g.height
-);
-ctx.stroke();
-});
-
+function initGame() {
+    state = 'PLAYING';
+    document.getElementById('screen-count').style.display = 'none';
+    score = 0;
+    document.getElementById('score').innerText = 0;
+    obstacles = []; fishes = [];
+    oyen.y = groundY - oyen.h;
+    spawnTimer = 0;
 }
 
-/* ================= GAME LOOP ================= */
-
-function update(){
-
-ctx.clearRect(0,0,canvas.width,canvas.height);
-
-drawBackground();
-
-/* Physics */
-cat.vy+=cat.gravity;
-cat.y+=cat.vy;
-
-if(cat.y>=canvas.height-190){
-cat.y=canvas.height-190;
-cat.vy=0;
-cat.onGround=true;
+function gameOver() {
+    state = 'GAMEOVER';
+    if(score > highscore) {
+        highscore = score;
+        localStorage.setItem("oyen_highscore", highscore);
+        document.getElementById("best").innerText = highscore;
+    }
+    document.getElementById('screen-gameover').style.display = 'flex';
+    document.getElementById('final-score').innerText = score;
 }
 
-/* Shadow */
-ctx.fillStyle="rgba(0,0,0,0.3)";
-ctx.beginPath();
-ctx.ellipse(cat.x+55,cat.y+115,50,15,0,0,Math.PI*2);
-ctx.fill();
+function drawOyen() {
+    ctx.save();
+    // Smooth animation recovery
+    oyen.stretchX += (1 - oyen.stretchX) * 0.15;
+    oyen.stretchY += (1 - oyen.stretchY) * 0.15;
+    
+    ctx.translate(oyen.x + oyen.w/2, oyen.y + oyen.h/2);
+    ctx.scale(oyen.stretchX, oyen.stretchY);
 
-/* ===== CAT (Better Rounded + Glow) ===== */
+    // Shadow under the cat
+    ctx.fillStyle = "rgba(0,0,0,0.2)";
+    ctx.beginPath();
+    ctx.ellipse(0, oyen.h/2, 30 * oyen.stretchX, 10, 0, 0, Math.PI*2);
+    ctx.fill();
 
-ctx.save();
-ctx.translate(cat.x,cat.y);
-
-ctx.shadowColor="#FF8C00";
-ctx.shadowBlur=30;
-
-ctx.fillStyle="#FF8C00";
-ctx.beginPath();
-ctx.roundRect(0,0,100,100,40);
-ctx.fill();
-
-ctx.shadowBlur=0;
-
-/* Eyes */
-ctx.fillStyle="black";
-ctx.beginPath();
-ctx.arc(35,45,6,0,Math.PI*2);
-ctx.arc(65,45,6,0,Math.PI*2);
-ctx.fill();
-
-/* Mouth */
-ctx.strokeStyle="black";
-ctx.lineWidth=3;
-ctx.beginPath();
-ctx.arc(50,65,12,0,Math.PI);
-ctx.stroke();
-
-/* Tail */
-ctx.strokeStyle="#FF8C00";
-ctx.lineWidth=10;
-ctx.beginPath();
-ctx.moveTo(100,60);
-ctx.quadraticCurveTo(140,40,120,100);
-ctx.stroke();
-
-ctx.restore();
-
-/* ===== FISH ===== */
-
-for(let i=fish.length-1;i>=0;i--){
-let f=fish[i];
-f.x-=f.speed;
-f.offset+=0.1;
-
-ctx.shadowColor="yellow";
-ctx.shadowBlur=20;
-ctx.fillStyle="gold";
-ctx.beginPath();
-ctx.arc(f.x,f.y+Math.sin(f.offset)*5,f.r,0,Math.PI*2);
-ctx.fill();
-ctx.shadowBlur=0;
-
-if(
-cat.x < f.x+f.r &&
-cat.x+cat.w > f.x-f.r &&
-cat.y < f.y+f.r &&
-cat.y+cat.h > f.y-f.r
-){
-score++;
-scoreEl.innerText=score;
-fish.splice(i,1);
+    // Draw the actual PNG
+    // Note: -w/2 and -h/2 centers the image for the scaling effect
+    ctx.drawImage(catImg, -oyen.w/2, -oyen.h/2, oyen.w, oyen.h);
+    
+    ctx.restore();
 }
 
-if(f.x<-50) fish.splice(i,1);
+function loop() {
+    // Ultra Sky Gradient
+    const grad = ctx.createLinearGradient(0,0,0,H);
+    grad.addColorStop(0, '#1a2a6c'); grad.addColorStop(0.5, '#b21f1f'); grad.addColorStop(1, '#fdbb2d');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0,0,W,H);
+
+    // Ground
+    ctx.fillStyle = "#1d1d1d";
+    ctx.fillRect(0, groundY, W, H - groundY);
+
+    if (state === 'PLAYING') {
+        oyen.vy += oyen.gravity;
+        oyen.y += oyen.vy;
+        if (oyen.y > groundY - oyen.h) {
+            if(!oyen.onGround) { oyen.stretchX = 1.3; oyen.stretchY = 0.7; }
+            oyen.y = groundY - oyen.h;
+            oyen.vy = 0;
+            oyen.onGround = true;
+        }
+
+        spawnTimer++;
+        if (spawnTimer % 80 === 0) {
+            if(Math.random() > 0.3) obstacles.push({x: W, y: groundY-60, w: 60, h: 60});
+            else fishes.push({x: W, y: groundY - 150, r: 20});
+        }
+
+        // Obstacles (Crates)
+        ctx.fillStyle = "#5d4037";
+        obstacles.forEach((o, i) => {
+            o.x -= (7 + score/15);
+            ctx.shadowBlur = 10; ctx.shadowColor = "black";
+            ctx.fillRect(o.x, o.y, o.w, o.h);
+            ctx.shadowBlur = 0;
+            // Collision logic
+            if(oyen.x < o.x+o.w-15 && oyen.x+oyen.w-15 > o.x && oyen.y < o.y+o.h-15 && oyen.y+oyen.h-15 > o.y) {
+                gameOver();
+            }
+            if(o.x < -100) obstacles.splice(i, 1);
+        });
+
+        // Fish (Collectibles)
+        fishes.forEach((f, i) => {
+            f.x -= 6;
+            ctx.shadowBlur = 20; ctx.shadowColor = "gold";
+            ctx.fillStyle = "gold";
+            ctx.beginPath(); ctx.arc(f.x, f.y, f.r, 0, Math.PI*2); ctx.fill();
+            ctx.shadowBlur = 0;
+            // Collision
+            let dx = (oyen.x + oyen.w/2) - f.x;
+            let dy = (oyen.y + oyen.h/2) - f.y;
+            if(Math.sqrt(dx*dx + dy*dy) < 50) {
+                score++;
+                document.getElementById('score').innerText = score;
+                fishes.splice(i, 1);
+            }
+        });
+    }
+
+    drawOyen();
+    requestAnimationFrame(loop);
 }
 
-/* ===== OBSTACLES ===== */
-
-for(let i=obstacles.length-1;i>=0;i--){
-let o=obstacles[i];
-o.x-=o.speed;
-
-ctx.fillStyle="#8B4513";
-ctx.shadowColor="black";
-ctx.shadowBlur=15;
-ctx.beginPath();
-ctx.roundRect(o.x,o.y,o.w,o.h,15);
-ctx.fill();
-ctx.shadowBlur=0;
-
-if(
-cat.x < o.x+o.w &&
-cat.x+cat.w > o.x &&
-cat.y < o.y+o.h &&
-cat.y+cat.h > o.y
-){
-running=false;
-gameOverUI.style.display="flex";
-finalScore.innerText=score;
-}
-
-if(o.x<-100) obstacles.splice(i,1);
-}
-
-requestAnimationFrame(update);
-}
-
-update();
-
+loop();
 </script>
 </body>
 </html>
