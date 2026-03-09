@@ -3,204 +3,130 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sassy Cat (Ninja Ver.)</title>
+    <title>Sassy Pixel Cat 🐾</title>
     <style>
-        body { 
-            margin: 0; background: #e0f7fa; overflow: hidden; height: 100vh;
-            font-family: monospace; transition: background 0.5s;
-        }
+        body { margin: 0; height: 100vh; background: #f0f0f0; overflow: hidden; font-family: sans-serif; }
 
-        /* Ninja (Work) Mode */
-        .work-mode { background: white !important; }
-        .work-mode #cat-container, .work-mode #bubble { display: none; }
-        .work-mode #ninja-trigger { bottom: 0; right: 0; background: #ddd; } /* Biar nampak sikit butang tu */
-
-        /* Kucing & Sprite */
+        /* Container Kucing */
         #cat-container {
-            position: fixed; width: 64px; height: 64px;
-            bottom: 20px; left: 20px; cursor: pointer;
-            z-index: 9999; transition: left 2s linear, bottom 2s linear, transform 0.2s;
-            pointer-events: all;
-        }
-        
-        #cat-sprite {
-            width: 64px; height: 64px;
-            /* LINK SPRITE SHEET KUALITI TINGGI (4 arah, 4 action) */
-            background: url('https://cdn-icons-png.flaticon.com/512/833/833472.png'); /* Ini sample, tak cukup frame */
-            /* Kita guna imej CSS ganti sprite sebab susah nak cari sheet free kualiti game */
-            background: none;
-        }
-        
-        /* GANTI SPRITE DENGAN CSS ANIMATION KUCING (Paling Hidup Tanpa Asset) */
-        .cat-css {
-            width: 64px; height: 48px; background: #fb8c00;
-            border-radius: 50px 50px 10px 10px; position: relative;
-            transform-origin: bottom center; animation: breathe 1s infinite ease-in-out;
-        }
-        .ear { width: 15px; height: 15px; background: #fb8c00; position: absolute; top: -7px; border-radius: 3px; transform: rotate(45deg); z-index: -1; }
-        .ear.l { left: 10px; } .ear.r { right: 10px; }
-        .eye { width: 8px; height: 8px; background: #212121; border-radius: 50%; position: absolute; top: 15px; animation: eyeBlink 3s infinite; }
-        .eye.l { left: 18px; } .eye.r { right: 18px; }
-        .tail { width: 40px; height: 8px; background: #e65100; position: absolute; bottom: 0; right: -30px; border-radius: 0 50px 50px 0; transform-origin: left center; animation: tailWag 2s infinite ease-in-out; }
-        
-        /* Bubble Percakapan */
-        #bubble {
-            position: absolute; bottom: 100px; right: 0;
-            background: white; color: black; padding: 8px;
-            border-radius: 10px; border: 2px solid black;
-            font-size: 12px; font-weight: bold; display: none; text-align: center;
+            position: fixed; width: 80px; height: 60px;
+            bottom: 50px; left: 50px; cursor: pointer;
+            transition: left 1.5s ease-in-out, top 1.5s ease-in-out;
+            z-index: 999;
         }
 
-        /* Animations */
-        @keyframes breathe { 0%, 100% { transform: scale(1); } 50% { transform: scaleY(1.05); } }
-        @keyframes eyeBlink { 0%, 90%, 100% { transform: scaleY(1); } 95% { transform: scaleY(0.1); } }
-        @keyframes tailWag { 0%, 100% { transform: rotate(0deg); } 50% { transform: rotate(20deg); } }
-        @keyframes catWalk { 0% { transform: rotate(0); } 25% { transform: rotate(-10deg); } 75% { transform: rotate(10deg); } 100% { transform: rotate(0); } }
-        @keyframes catLick { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(-15deg); } }
-        
-        /* Ninja Trigger */
-        #ninja-trigger {
-            position: fixed; bottom: -5px; right: -5px; width: 40px; height: 40px;
-            border-radius: 50%; background: transparent; cursor: pointer; z-index: 10000;
+        /* Rupa Kucing (Pixel Art CSS) */
+        .cat-body {
+            position: relative; width: 60px; height: 40px;
+            background: #333; border-radius: 10px 10px 5px 5px;
         }
+        /* Kepala */
+        .head {
+            position: absolute; width: 45px; height: 35px;
+            background: #333; top: -20px; left: 0; border-radius: 15px 15px 5px 5px;
+        }
+        /* Telinga */
+        .ear {
+            position: absolute; width: 0; height: 0;
+            border-left: 10px solid transparent; border-right: 10px solid transparent;
+            border-bottom: 15px solid #333; top: -10px;
+        }
+        .ear.left { left: 5px; } .ear.right { right: 5px; }
+        /* Mata */
+        .eye {
+            position: absolute; width: 6px; height: 6px;
+            background: #ffff00; top: 12px; border-radius: 50%;
+        }
+        .eye.left { left: 10px; } .eye.right { right: 25px; }
+        .pupil { position: absolute; width: 2px; height: 6px; background: black; left: 2px; }
+        /* Ekor */
+        .tail {
+            position: absolute; width: 30px; height: 8px;
+            background: #333; right: -25px; bottom: 10px;
+            border-radius: 0 10px 10px 0; transform-origin: left;
+            animation: wag 1s infinite alternate;
+        }
+
+        /* Animasi */
+        @keyframes wag { from { transform: rotate(0deg); } to { transform: rotate(30deg); } }
         
-        /* System Log (Fake Notes) */
-        #fake-notes { 
-            display: none; padding: 20px; font-family: monospace; font-size: 11px;
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+        /* Lompat */
+        .jump { animation: jump-action 0.4s ease-out !important; }
+        @keyframes jump-action {
+            0% { transform: translateY(0); }
+            50% { transform: translateY(-80px); }
+            100% { transform: translateY(0); }
+        }
+
+        /* Bubble Mesej */
+        #bubble {
+            position: absolute; top: -60px; left: 0; background: white;
+            padding: 8px 12px; border-radius: 15px; border: 2px solid #333;
+            font-size: 12px; font-weight: bold; display: none; white-space: nowrap;
         }
     </style>
 </head>
-<body id="main-body">
+<body>
 
-    <div id="cat-container">
+    <div id="cat-container" onclick="react()">
         <div id="bubble">Meow!</div>
-        <div class="cat-css" id="cat-body">
-            <div class="ear l"></div><div class="ear r"></div>
-            <div class="eye l"></div><div class="eye r"></div>
+        <div class="head">
+            <div class="ear left"></div>
+            <div class="ear right"></div>
+            <div class="eye left"><div class="pupil"></div></div>
+            <div class="eye right"><div class="pupil"></div></div>
+        </div>
+        <div class="cat-body">
             <div class="tail"></div>
         </div>
     </div>
 
-    <div id="fake-notes">
-        > C_NET-STREAM_INIT [OK]<br>
-        > WAITING FOR USER INPUT... (STATUS: ACTIVE)<br>
-        > ANALYZING BEHAVIOR_PATTERN_CAT.JS [OK]<br>
-        > IDLE TIME: 0s
-    </div>
-
-    <div id="ninja-trigger" title="Double Click for Ninja Mode" ondblclick="toggleNinja()"></div>
-
     <script>
         const cat = document.getElementById('cat-container');
-        const catBody = document.getElementById('cat-body');
         const bubble = document.getElementById('bubble');
-        let idleTime = 0;
-        let isNinja = false;
 
-        // "Otak" Kucing - States
-        const states = {
-            IDLE: 'idle',
-            WANDER: 'wander',
-            LICK: 'lick',
-            SLEEP: 'sleep',
-            REACT: 'react'
-        };
-        let currentState = states.IDLE;
-
-        // Mesej Kucing
-        const messages = {
-            wander: ["Jom jalan-jalan!", "Mana lipas tadi?", "Bosan la..."],
-            lick: ["Bersihnya kaki I!", "Jilat dulu bro."],
-            react: ["Kacau la!", "Melompat katak I!", "Rindu I ke?"],
-            sleep: ["ZZzz... U noisy.", "Jangan kacau, I sleep."]
-        };
-
-        // Fungsi Tukar State & Animasi
-        function changeState(newState) {
-            if (isNinja || currentState === states.SLEEP) return; // Takleh tukar kalau ninja atau tidur
-
-            currentState = newState;
-            catBody.style.animation = "breathe 1s infinite ease-in-out"; // Reset animation
-            catBody.style.opacity = "1";
-            idleTime = 0; // Reset idle timer
-
-            switch (newState) {
-                case states.WANDER:
-                    catBody.style.animation = "catWalk 0.5s infinite linear";
-                    moveCatRandomly();
-                    break;
-                case states.LICK:
-                    catBody.style.animation = "catLick 0.5s infinite linear";
-                    break;
-                case states.SLEEP:
-                    catBody.style.opacity = "0.6";
-                    break;
-            }
-            showBubble(messages[newState]);
+        // 1. Fungsi Lompat (React)
+        function react() {
+            cat.classList.add('jump');
+            showBubble("Hey! Terkejut I! 🙀");
+            setTimeout(() => {
+                cat.classList.remove('jump');
+            }, 400);
         }
 
-        // Kucing Jalan-Jalan
-        function moveCatRandomly() {
-            const rx = Math.random() * (window.innerWidth - 100);
-            const currentX = parseInt(cat.style.left) || 20;
+        // 2. Fungsi Jalan-Jalan (Wander)
+        function wander() {
+            const x = Math.random() * (window.innerWidth - 100);
+            const y = Math.random() * (window.innerHeight - 100);
             
-            // Pusing badan ikut arah jalan
-            cat.style.transform = rx > currentX ? 'scaleX(1)' : 'scaleX(-1)';
-            cat.style.left = rx + 'px';
+            // Pusing badan ikut arah
+            const currentLeft = parseInt(cat.style.left) || 50;
+            cat.style.transform = x > currentLeft ? 'scaleX(1)' : 'scaleX(-1)';
+            
+            cat.style.left = x + 'px';
+            cat.style.bottom = (window.innerHeight - y) + 'px';
+            
+            if(Math.random() > 0.7) showBubble("I cari lipas jap... 🕵️");
         }
 
-        // Tunjuk Bubble (Rawak dari list)
-        function showBubble(msgList) {
-            if (!msgList || isNinja) return;
-            bubble.innerText = msgList[Math.floor(Math.random() * msgList.length)];
+        // 3. Bubble Mesej
+        function showBubble(text) {
+            bubble.innerText = text;
             bubble.style.display = 'block';
-            setTimeout(() => bubble.style.display = 'none', 3000);
+            setTimeout(() => { bubble.style.display = 'none'; }, 3000);
         }
 
-        // "Otak" - Berfikir setiap 8 saat (buat benda rawak)
+        // Otak Kucing (Fikir nak buat apa setiap 5 saat)
         setInterval(() => {
-            if (isNinja || currentState === states.SLEEP || currentState === states.REACT) return;
-            
-            const rand = Math.random();
-            if (rand < 0.1) changeState(states.WANDER);
-            else if (rand < 0.2) changeState(states.LICK);
-            else changeState(states.IDLE); // Kebanyakannya idle
-        }, 8000);
+            const r = Math.random();
+            if (r < 0.3) {
+                wander();
+            } else if (r < 0.5) {
+                showBubble("I nak tidur jap... 💤");
+            }
+        }, 5000);
 
-        // Interact - Bila klik kucing
-        cat.onclick = (e) => {
-            if (isNinja) return;
-            e.stopPropagation(); // Taknak trigger body click
-            changeState(states.REACT);
-            // Animasi melompat
-            catBody.style.animation = "jumpAnim 0.3s ease";
-            setTimeout(() => catBody.style.animation = "breathe 1s infinite ease-in-out", 300);
-            
-            // Kucing lari sikit
-            const offset = (Math.random() > 0.5 ? 50 : -50);
-            cat.style.left = (parseInt(cat.style.left) || 20) + offset + 'px';
-            
-            setTimeout(() => currentState = states.IDLE, 500); // Balik idle lepas lari
-        };
-
-        // Sleep Logic - Monitor idle user
-        document.onmousemove = () => { 
-            if (currentState === states.SLEEP) changeState(states.IDLE); // Bangun bila mouse gerak
-            idleTime = 0; 
-        };
-        setInterval(() => {
-            if (isNinja || currentState === states.SLEEP) return;
-            idleTime++;
-            if (idleTime > 20) changeState(states.SLEEP); // 20 saat tak gerak, kucing tidur
-        }, 1000);
-
-        // Ninja Mode (Double Click Trigger)
-        function toggleNinja() {
-            isNinja = !isNinja;
-            document.getElementById('main-body').classList.toggle('work-mode');
-            document.getElementById('fake-notes').style.display = isNinja ? 'block' : 'none';
-        }
     </script>
 </body>
 </html>
+
