@@ -1,217 +1,85 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ms">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
-    <title>Oyen Adventure – Running Background</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Work Notes (Kononnya)</title>
     <style>
-        :root { --primary: #00d2ff; --secondary: #92fe9d; --text: #05445e; }
-        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', sans-serif; background: #e0f7fa; touch-action: none; -webkit-user-select: none; }
-        canvas { display: block; }
-        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text); backdrop-filter: blur(8px); background: rgba(255,255,255,0.6); z-index: 100; text-align: center; padding: 20px; box-sizing: border-box; }
-        #ui-layer { position: absolute; top: 20px; left: 20px; right: 20px; display: flex; justify-content: space-between; color: var(--text); font-weight: bold; font-size: 24px; z-index: 50; pointer-events: none; }
-        .glass { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(4px); padding: 10px 20px; border-radius: 20px; border: 2px solid #fff; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        h1 { font-size: 3rem; margin: 0; color: #05445e; text-shadow: 2px 2px #fff; }
-        button { padding: 15px 40px; font-size: 1.5rem; font-weight: bold; border: none; border-radius: 50px; cursor: pointer; background: linear-gradient(45deg, #00d2ff, #92fe9d); color: #05445e; box-shadow: 0 4px 15px rgba(0,0,0,0.2); touch-action: manipulation; }
-        #countdown { font-size: 8rem; font-weight: 900; color: #05445e; }
+        body { 
+            margin: 0; background: #f4f4f9; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            height: 100vh; transition: 0.3s;
+        }
+        /* Mode Kerja (Ninja Mode) */
+        .work-mode { background: white !important; }
+        .work-mode #cat, .work-mode #message { display: none; }
+        .work-mode #fake-notes { display: block !important; }
+
+        #cat { width: 150px; cursor: pointer; transition: transform 0.2s; }
+        #cat:hover { transform: scale(1.1) rotate(5deg); }
+        
+        #message {
+            margin-top: 20px; padding: 15px; background: white;
+            border-radius: 15px; box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            max-width: 250px; text-align: center; font-weight: bold;
+            color: #444; display: none; animation: pop 0.3s ease;
+        }
+
+        #fake-notes { 
+            display: none; padding: 20px; text-align: left; color: #333; 
+            font-family: monospace; font-size: 12px;
+        }
+
+        @keyframes pop {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* Butang Rahsia */
+        #ninja-trigger {
+            position: fixed; bottom: 0; right: 0; width: 30px; height: 30px;
+            cursor: pointer; background: transparent;
+        }
     </style>
 </head>
-<body>
+<body id="main-body">
 
-    <div id="ui-layer">
-        <div class="glass">🐟 <span id="score">0</span></div>
-        <div class="glass">🏆 <span id="best">0</span></div>
+    <img id="cat" src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExOHpueG56ZzR6NHpueG56ZzR6NHpueG56ZzR6NHpueG56ZzR6JmVwPXYxX2ludGVybmFsX2dpZl9ieV9pZCZjdD1z/3oriO0OEd9QIDdllqo/giphy.gif" onclick="showMessage()">
+
+    <div id="message"></div>
+
+    <div id="fake-notes">
+        > SYSTEM-LOG: IDLE<br>
+        > WAITING FOR INPUT...<br>
+        > ANALYZING DATA_STREAM_01...<br>
+        > STATUS: OPTIMIZING WORKFLOW...
     </div>
 
-    <div id="screen-intro" class="overlay">
-        <h1>SAPIKRUDIN KYLE ADVENTURE</h1>
-        <p>Happy monyek time! Tap to jump.</p>
-        <button onpointerdown="startCountdown()">START</button>
-    </div>
+    <div id="ninja-trigger" onclick="toggleNinja()"></div>
 
-    <div id="screen-count" class="overlay" style="display:none;">
-        <div id="countdown">5</div>
-    </div>
+    <script>
+        const quotes = [
+            "U hensem la harini! ❤️",
+            "Sikit lagi nak balik, jom makan sedap japlagi!",
+            "I dah rindu la kat u... 😿",
+            "Jangan stress, I ada kat sini.",
+            "Dah minum air ke belum? Minum sekarang! 💧",
+            "U buat kerja gempak gila harini! 🔥"
+        ];
 
-    <div id="screen-gameover" class="overlay" style="display:none;">
-        <h1 style="color: #d32f2f;">AISEYMEN KYLE!</h1>
-        <button onpointerdown="startCountdown()">CUBA MONYEK LAGI</button>
-    </div>
-
-    <canvas id="game"></canvas>
-
-<script>
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
-
-// Load Images
-const assets = {
-    cat: new Image(),
-    obs: new Image(),
-    fish: new Image()
-};
-assets.cat.src = 'cat.png';
-assets.obs.src = 'obstacle.png';
-assets.fish.src = 'fish.png';
-
-let state = 'INTRO';
-let score = 0;
-let highscore = localStorage.getItem("oyen_highscore") || 0;
-document.getElementById("best").innerText = highscore;
-
-let W, H, groundY;
-let bgOffset = 0; // Untuk pergerakan background
-
-function resize() {
-    W = window.innerWidth;
-    H = window.innerHeight;
-    canvas.width = W;
-    canvas.height = H;
-    groundY = H * 0.85;
-}
-window.addEventListener('resize', resize);
-resize();
-
-const oyen = {
-    x: 80, y: 0, w: 90, h: 90,
-    vy: 0, gravity: 0.8, jumpPower: -18,
-    onGround: false, stretchX: 1, stretchY: 1
-};
-
-let obstacles = [], fishes = [], spawnTimer = 0;
-
-function startCountdown() {
-    document.getElementById('screen-intro').style.display = 'none';
-    document.getElementById('screen-gameover').style.display = 'none';
-    document.getElementById('screen-count').style.display = 'flex';
-    state = 'COUNTDOWN';
-    let count = 5;
-    const el = document.getElementById('countdown');
-    el.innerText = count;
-    score = 0; obstacles = []; fishes = [];
-    document.getElementById('score').innerText = "0";
-
-    const timer = setInterval(() => {
-        count--;
-        if (count > 0) el.innerText = count;
-        else {
-            clearInterval(timer);
-            document.getElementById('screen-count').style.display = 'none';
-            state = 'PLAYING';
-            oyen.y = groundY - oyen.h;
-            oyen.vy = 0;
-        }
-    }, 1000);
-}
-
-function jump() {
-    if (state === 'PLAYING' && oyen.onGround) {
-        oyen.vy = oyen.jumpPower;
-        oyen.onGround = false;
-        oyen.stretchX = 0.7; oyen.stretchY = 1.3;
-    }
-}
-window.addEventListener('pointerdown', jump);
-
-function drawMovingBG() {
-    // 1. SKY (Static)
-    const grad = ctx.createLinearGradient(0, 0, 0, groundY);
-    grad.addColorStop(0, '#81d4fa');
-    grad.addColorStop(1, '#e1f5fe');
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, W, H);
-
-    // 2. CLOUDS (Moving Slowly)
-    if (state === 'PLAYING') bgOffset += 2; 
-    ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
-    for (let i = 0; i < 5; i++) {
-        let x = ((i * W / 3) - (bgOffset * 0.5)) % (W + 200);
-        if (x < -200) x += (W + 400); 
-        ctx.beginPath();
-        ctx.arc(x, 100 + (i * 20), 40, 0, Math.PI * 2);
-        ctx.arc(x + 40, 100 + (i * 20), 50, 0, Math.PI * 2);
-        ctx.arc(x + 80, 100 + (i * 20), 40, 0, Math.PI * 2);
-        ctx.fill();
-    }
-
-    // 3. GROUND
-    ctx.fillStyle = "#81c784";
-    ctx.fillRect(0, groundY, W, H - groundY);
-    
-    // 4. MOVING GRASS DETAIL (Moving Fast)
-    ctx.strokeStyle = "#66bb6a";
-    ctx.lineWidth = 4;
-    for (let i = 0; i < 15; i++) {
-        let gx = ((i * W / 10) - (bgOffset * 4)) % (W + 100);
-        if (gx < -100) gx += (W + 200);
-        ctx.beginPath();
-        ctx.moveTo(gx, groundY);
-        ctx.lineTo(gx - 10, groundY + 20);
-        ctx.stroke();
-    }
-    
-    // Ground Highlight
-    ctx.fillStyle = "#66bb6a";
-    ctx.fillRect(0, groundY, W, 8);
-}
-
-function loop() {
-    drawMovingBG();
-
-    if (state === 'PLAYING') {
-        oyen.vy += oyen.gravity;
-        oyen.y += oyen.vy;
-        if (oyen.y > groundY - oyen.h) {
-            if(!oyen.onGround) { oyen.stretchX = 1.3; oyen.stretchY = 0.7; }
-            oyen.y = groundY - oyen.h; oyen.vy = 0; oyen.onGround = true;
+        function showMessage() {
+            const msgBox = document.getElementById('message');
+            msgBox.innerText = quotes[Math.floor(Math.random() * quotes.length)];
+            msgBox.style.display = 'block';
+            
+            // Auto hide mesej lepas 4 saat
+            setTimeout(() => { msgBox.style.display = 'none'; }, 4000);
         }
 
-        spawnTimer++;
-        if (spawnTimer % 90 === 0) {
-            if(Math.random() > 0.4) obstacles.push({x: W, y: groundY-75, w: 75, h: 75});
-            else fishes.push({x: W, y: groundY-150-Math.random()*100, w: 50, h: 50});
+        function toggleNinja() {
+            document.getElementById('main-body').classList.toggle('work-mode');
         }
-
-        obstacles.forEach((o, i) => {
-            o.x -= (7 + score/15);
-            ctx.drawImage(assets.obs, o.x, o.y, o.w, o.h);
-            if(oyen.x < o.x+o.w-20 && oyen.x+oyen.w-20 > o.x && oyen.y < o.y+o.h-20 && oyen.y+oyen.h-20 > o.y) {
-                state = 'KYLE LOSER';
-                document.getElementById('screen-gameover').style.display = 'flex';
-                if(score > highscore) {
-                    highscore = score;
-                    localStorage.setItem("oyen_highscore", highscore);
-                    document.getElementById("best").innerText = highscore;
-                }
-            }
-            if(o.x < -100) obstacles.splice(i, 1);
-        });
-
-        fishes.forEach((f, i) => {
-            f.x -= 6;
-            ctx.drawImage(assets.fish, f.x, f.y, f.w, f.h);
-            if(Math.hypot((oyen.x+oyen.w/2)-(f.x+f.w/2), (oyen.y+oyen.h/2)-(f.y+f.h/2)) < 50) {
-                score++;
-                document.getElementById('score').innerText = score;
-                fishes.splice(i, 1);
-            }
-        });
-    }
-
-    // Draw Oyen (Mirrored)
-    ctx.save();
-    oyen.stretchX += (1 - oyen.stretchX) * 0.12;
-    oyen.stretchY += (1 - oyen.stretchY) * 0.12;
-    ctx.translate(oyen.x + oyen.w/2, oyen.y + oyen.h/2);
-    ctx.scale(-1 * oyen.stretchX, oyen.stretchY);
-    ctx.drawImage(assets.cat, -oyen.w/2, -oyen.h/2, oyen.w, oyen.h);
-    ctx.restore();
-
-    requestAnimationFrame(loop);
-}
-loop();
-</script>
+    </script>
 </body>
 </html>
-
-
