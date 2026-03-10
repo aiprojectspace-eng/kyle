@@ -3,130 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sassy Pixel Cat 🐾</title>
-    <style>
-        body { margin: 0; height: 100vh; background: #f0f0f0; overflow: hidden; font-family: sans-serif; }
-
-        /* Container Kucing */
-        #cat-container {
-            position: fixed; width: 80px; height: 60px;
-            bottom: 50px; left: 50px; cursor: pointer;
-            transition: left 1.5s ease-in-out, top 1.5s ease-in-out;
-            z-index: 999;
-        }
-
-        /* Rupa Kucing (Pixel Art CSS) */
-        .cat-body {
-            position: relative; width: 60px; height: 40px;
-            background: #333; border-radius: 10px 10px 5px 5px;
-        }
-        /* Kepala */
-        .head {
-            position: absolute; width: 45px; height: 35px;
-            background: #333; top: -20px; left: 0; border-radius: 15px 15px 5px 5px;
-        }
-        /* Telinga */
-        .ear {
-            position: absolute; width: 0; height: 0;
-            border-left: 10px solid transparent; border-right: 10px solid transparent;
-            border-bottom: 15px solid #333; top: -10px;
-        }
-        .ear.left { left: 5px; } .ear.right { right: 5px; }
-        /* Mata */
-        .eye {
-            position: absolute; width: 6px; height: 6px;
-            background: #ffff00; top: 12px; border-radius: 50%;
-        }
-        .eye.left { left: 10px; } .eye.right { right: 25px; }
-        .pupil { position: absolute; width: 2px; height: 6px; background: black; left: 2px; }
-        /* Ekor */
-        .tail {
-            position: absolute; width: 30px; height: 8px;
-            background: #333; right: -25px; bottom: 10px;
-            border-radius: 0 10px 10px 0; transform-origin: left;
-            animation: wag 1s infinite alternate;
-        }
-
-        /* Animasi */
-        @keyframes wag { from { transform: rotate(0deg); } to { transform: rotate(30deg); } }
-        
-        /* Lompat */
-        .jump { animation: jump-action 0.4s ease-out !important; }
-        @keyframes jump-action {
-            0% { transform: translateY(0); }
-            50% { transform: translateY(-80px); }
-            100% { transform: translateY(0); }
-        }
-
-        /* Bubble Mesej */
-        #bubble {
-            position: absolute; top: -60px; left: 0; background: white;
-            padding: 8px 12px; border-radius: 15px; border: 2px solid #333;
-            font-size: 12px; font-weight: bold; display: none; white-space: nowrap;
-        }
-    </style>
+    <title>Robot Desktop Pet</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-    <div id="cat-container" onclick="react()">
-        <div id="bubble">Meow!</div>
-        <div class="head">
-            <div class="ear left"></div>
-            <div class="ear right"></div>
-            <div class="eye left"><div class="pupil"></div></div>
-            <div class="eye right"><div class="pupil"></div></div>
-        </div>
-        <div class="cat-body">
-            <div class="tail"></div>
-        </div>
+    <div id="pet-container" class="idle">
+        <div id="robot" class="sprite"></div>
     </div>
 
-    <script>
-        const cat = document.getElementById('cat-container');
-        const bubble = document.getElementById('bubble');
-
-        // 1. Fungsi Lompat (React)
-        function react() {
-            cat.classList.add('jump');
-            showBubble("Hey! Terkejut I! 🙀");
-            setTimeout(() => {
-                cat.classList.remove('jump');
-            }, 400);
-        }
-
-        // 2. Fungsi Jalan-Jalan (Wander)
-        function wander() {
-            const x = Math.random() * (window.innerWidth - 100);
-            const y = Math.random() * (window.innerHeight - 100);
-            
-            // Pusing badan ikut arah
-            const currentLeft = parseInt(cat.style.left) || 50;
-            cat.style.transform = x > currentLeft ? 'scaleX(1)' : 'scaleX(-1)';
-            
-            cat.style.left = x + 'px';
-            cat.style.bottom = (window.innerHeight - y) + 'px';
-            
-            if(Math.random() > 0.7) showBubble("I cari lipas jap... 🕵️");
-        }
-
-        // 3. Bubble Mesej
-        function showBubble(text) {
-            bubble.innerText = text;
-            bubble.style.display = 'block';
-            setTimeout(() => { bubble.style.display = 'none'; }, 3000);
-        }
-
-        // Otak Kucing (Fikir nak buat apa setiap 5 saat)
-        setInterval(() => {
-            const r = Math.random();
-            if (r < 0.3) {
-                wander();
-            } else if (r < 0.5) {
-                showBubble("I nak tidur jap... 💤");
-            }
-        }, 5000);
-
-    </script>
+    <script src="script.js"></script>
 </body>
 </html>
-
